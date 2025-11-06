@@ -46,3 +46,15 @@ if submitted:
         st.success(f"Twój wynik: {score} / {len(questions)}")
     else:
         st.error(f"Twój wynik: {score} / {len(questions)}")
+
+
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.header("Kolumna 1")
+    st.button("Przycisk 1")
+with col2:
+    st.header("Kolumna 2")
+    st.button("Przycisk 2")
+with col3:
+    st.header("Kolumna 3")
+    st.button("Przycisk 3")

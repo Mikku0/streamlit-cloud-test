@@ -60,7 +60,7 @@ with tab2:
     with col1:
         with st.container():
             st.header("Statystyki")
-            col11, col12, col13 = st.columns(3)
+            col11, col12, col13 = st.columns([2, 1, 1])
             with col11:
                 st.metric("Liczba pytań: ", len(questions))
             with col12:    
@@ -68,7 +68,7 @@ with tab2:
             with col13:
                 st.metric("Wymagany wynik: ", f"{int(len(questions)*0.5)} pkt")
     with col2:
-        st.header("Poziom trudności quizu:")
+        st.header("Poziom trudności:")
         st.write("Niski")
     with col3:
         st.header("Linki edukacyjne")

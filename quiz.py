@@ -63,3 +63,12 @@ with tab2:
 
 with st.expander("Rozwiń, aby zobaczyć kod źródłowy"):
     st.page_link("https://github.com/Mikku0/streamlit-cloud-test/blob/master/quiz.py", label="kod na githubie")
+
+st.sidebar.title("Panel boczny")
+selected_option = st.sidebar.selectbox("Wybierz opcję",["Strona główna", "Analiza danych", "Wizualizacje"])
+if selected_option == "Strona główna":
+    st.write("Witamy na stronie głównej")
+elif selected_option == "Analiza danych":
+    st.write("Sekcja analizy danych")
+else:
+    st.write("Sekcja wizualizacji")

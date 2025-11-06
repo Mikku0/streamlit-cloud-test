@@ -2,7 +2,7 @@ import streamlit as st
 
 st.title("Mini Quiz")
 
-tab1, tab2 = st.tabs(["Quiz", "Kolumny"])
+tab1, tab2 = st.tabs(["Quiz", "Dodatkowe informacje"])
 
 questions = [
     {
@@ -58,13 +58,18 @@ with tab1:
 with tab2:
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.header("Statystyki")
-        st.metric("Liczba pytań", len(questions))
-        st.metric("Wymagany wynik", f"{int(len(questions)*0.5)} pkt")
+        with st.container():
+            st.header("Statystyki")
+            col11, col12, col13 = st.columns(3)
+            with col11:
+                st.metric("Liczba pytań: ", len(questions))
+            with col12:    
+                st.metric("Wymagane % do zaliczenia: ", (len(questions)/2)/len(questions) * 100)
+            with col13:
+                st.metric("Wymagany wynik: ", f"{int(len(questions)*0.5)} pkt")
     with col2:
-        st.header("Ciekawostka")
-        if st.button("Pokaż ciekawostkę"):
-            st.info("Tlen to najczęściej występujący pierwiastek w ludzkim ciele.")
+        st.header("Poziom trudności quizu:")
+        st.write("Niski")
     with col3:
         st.header("Linki edukacyjne")
         st.page_link("https://pl.wikipedia.org/wiki/Pierwiastek_chemiczny", label="Pierwiastki chemiczne")

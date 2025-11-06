@@ -34,6 +34,8 @@ with tab1:
         for i, q in enumerate(questions):
             user_choice = st.radio(f"{i+1}. {q['question']}", q["options"], key=i, index=None)
             user_answers.append(user_choice)
+            with st.expander("Podpowiedź:"):
+                st.page_link("https://pl.wikipedia.org/wiki/Pies_domowy", label="podpowiedź do pytania 1")
         submitted = st.form_submit_button("Sprawdź wynik")
 
     if submitted:
@@ -52,8 +54,7 @@ with tab1:
 with tab2:
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.header("Kolumna 1")
-        st.button("Przycisk 1")
+    
     with col2:
         st.header("Kolumna 2")
         st.button("Przycisk 2")

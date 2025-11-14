@@ -74,13 +74,13 @@ with tab1:
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.info("### 🗺️ Mapa wizualizacji\nInteraktywna mapa z filtrami, wyborem kolumn i wykresami.", icon="🗺️")
+        st.info("### 🗺️ Mapa wizualizacji\nInteraktywna mapa z filtrami, wyborem kolumn i wykresami.")
 
     with col2:
-        st.info("### 📊 Statystyki i Analiza\nHistogramy, korelacje, wykresy zależności i kluczowe metryki.", icon="📊")
+        st.info("### 📊 Statystyki i Analiza\nHistogramy, korelacje, wykresy zależności i kluczowe metryki.")
 
     with col3:
-        st.info("### 🤖 Predykcja (opcjonalnie)\nStrona na model ML do przewidywania cen mieszkań.", icon="🤖")
+        st.info("### 🤖 Predykcja (w przyszłości)\nStrona na model ML do przewidywania cen mieszkań.")
 
     st.divider()
 
@@ -98,8 +98,8 @@ with tab1:
 
     # --- FOOTER ---
     st.markdown("""
-    ### 🧑‍💻 Autor projektu  
-    Aplikacja przygotowana w Streamlit jako część projektu predykcyjnego dotyczącego cen nieruchomości w Kalifornii.
+    ### 🧑‍💻 Autorzy projektu  
+    Anna Woźniak, Mikołaj Wróblewski, Daniil Ihnatiuhin
     """)
 
 # ============================================================================

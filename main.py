@@ -124,6 +124,7 @@ with tab2:
 
     # Opcja użycia wbudowanego datasetu
     use_builtin = st.sidebar.checkbox("Użyj wbudowanego datasetu (housing.csv)", value=True)
+    manual_input = st.sidebar.checkbox("Wprowadź własne dane ręcznie")
 
     df_map = None
     

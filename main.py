@@ -266,7 +266,7 @@ with tab2:
                             key=f"filter_{col}_multi"
                         )
                         if len(selected_vals) != len(unique_vals):
-                            active_filters[col] = = selected_vals
+                            active_filters[col] = selected_vals
                             
                 filtered_df = df_map.copy()    
                 for col, filter_val in active_filters.items():

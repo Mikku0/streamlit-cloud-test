@@ -1,13 +1,25 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from autogluon.tabular import TabularPredictor
+import os
 
 # --- CONFIG ---
+MODEL_PATH = "model"  # путь к предобученной модели
+
 st.set_page_config(
     page_title="California Housing Explorer",
     page_icon="🏠",
     layout="wide"
 )
+
+# --- CACHE MODEL ---
+@st.cache_resource
+def load_pretrained_model():
+    """Загрузка предобученной модели AutoGluon"""
+    if os.path.exists(MODEL_PATH):
+        return TabularPredictor.load(MODEL_PATH)
+    return None
 
 # --- CACHE DATA ---
 @st.cache_data
@@ -115,47 +127,92 @@ with tab2:
     # Sidebar for controls
     st.sidebar.header("Controls")
     
-    # File uploader
-    uploaded_file = st.sidebar.file_uploader(
-        "Upload CSV file",
-        type=["csv"],
-        help="Upload a CSV file containing housing data"
+    # Wybór źródła danych - radio buttons zamiast checkboxów
+    data_source = st.sidebar.radio(
+        "Wybierz źródło danych:",
+        options=["builtin", "upload", "manual"],
+        format_func=lambda x: {
+            "builtin": "🗂️ Użyj wbudowanego datasetu (housing.csv)",
+            "upload": "📤 Wgraj własny plik CSV",
+            "manual": "✍️ Wprowadź własne dane ręcznie"
+        }[x],
+        index=0
     )
-
-    # Opcja użycia wbudowanego datasetu
-    use_builtin = st.sidebar.checkbox("Użyj wbudowanego datasetu (housing.csv)", value=True)
-    manual_input = st.sidebar.checkbox("Wprowadź własne dane ręcznie")
+    
+    # File uploader (pokazuj tylko gdy wybrano upload)
+    uploaded_file = None
+    if data_source == "upload":
+        uploaded_file = st.sidebar.file_uploader(
+            "Upload CSV file",
+            type=["csv"],
+            help="Upload a CSV file containing housing data"
+        )
 
     df_map = None
+    predictor = load_pretrained_model()
     
-    if use_builtin:
+    if data_source == "builtin":
         df_map = load_data()
         if df_map is None:
             st.error("Nie można wczytać pliku housing.csv")
-    elif uploaded_file is not None:
+        elif predictor is not None:
+            st.success("✅ Użyto wbudowanego datasetu z przedtrenowanym modelem AutoGluon")
+            
+    elif data_source == "upload" and uploaded_file is not None:
         try:
             df_map = pd.read_csv(uploaded_file)
+            st.success(f"Wczytano plik z {df_map.shape[0]} rekordami")
+            
+            # Sprawdź czy można dokonać refit
+            if predictor is not None:
+                if 'median_house_value' in df_map.columns:
+                    st.info("🔄 Znaleziono kolumnę 'median_house_value' - możliwe doszkolenie modelu (refit)")
+                    if st.button("🚀 Doszkolij model na nowych danych"):
+                        progress_bar = st.progress(0, text="Inicjalizacja refit...")
+                        try:
+                            progress_bar.progress(20, text="Przygotowywanie danych...")
+                            progress_bar.progress(50, text="Doszkalanie modelu (może potrwać kilka minut)...")
+                            predictor.refit_full(df_map)
+                            progress_bar.progress(100, text="Zakończono!")
+                            st.success("✅ Model został doszkolony na nowych danych!")
+                        except Exception as e:
+                            st.error(f"Błąd podczas refit: {str(e)}")
+                        finally:
+                            progress_bar.empty()
+                else:
+                    st.warning("⚠️ Brak kolumny 'median_house_value' w danych. Model będzie używany tylko do predykcji bez doszkolenia.")
         except Exception as e:
             st.error(f"Error loading file: {str(e)}")
-    elif manual_input:
-        st.subheader("Manual Data Entry")
+            
+    elif data_source == "manual":
+        st.subheader("✍️ Ręczne wprowadzanie danych")
         num_points = st.number_input("Ile punktów chcesz dodać?", min_value=1, max_value=20, value=1)
 
         manual_data = []
         for i in range(num_points):
             st.markdown(f"**Punkt {i+1}**")
-            lon = st.number_input(f"Longitude {i+1}", value=-120.0, key=f"lon_{i}")
-            lat = st.number_input(f"Latitude {i+1}", value=35.0, key=f"lat_{i}")
-            housing_median_age = st.number_input(f"Housing Median Age {i+1}", value=20.0, key=f"age_{i}")
-            total_rooms = st.number_input(f"Total Rooms {i+1}", value=1000.0, key=f"rooms_{i}")
-            total_bedrooms = st.number_input(f"Total Bedrooms {i+1}", value=200.0, key=f"bedrooms_{i}")
-            population = st.number_input(f"Population {i+1}", value=500.0, key=f"pop_{i}")
-            households = st.number_input(f"Households {i+1}", value=150.0, key=f"households_{i}")
-            median_income = st.number_input(f"Median Income {i+1}", value=3.0, key=f"income_{i}")
+            col1, col2 = st.columns(2)
+            with col1:
+                lon = st.slider(f"Longitude {i+1}", min_value=-180, max_value=180, value=-120.0, step=0.1, key=f"lon_{i}", help="Kalifornia: -124.5 do -114.0")
+                lat = st.slider(f"Latitude {i+1}", min_value=-90, max_value=90, value=37.0, step=0.1, key=f"lat_{i}", help="Kalifornia: 32.5 do 42.0")
+                housing_median_age = st.number_input(f"Housing Median Age {i+1}", value=20.0, key=f"age_{i}")
+                total_rooms = st.number_input(f"Total Rooms {i+1}", value=1000.0, key=f"rooms_{i}")
+            with col2:
+                total_bedrooms = st.number_input(f"Total Bedrooms {i+1}", value=200.0, key=f"bedrooms_{i}")
+                population = st.number_input(f"Population {i+1}", value=500.0, key=f"pop_{i}")
+                households = st.number_input(f"Households {i+1}", value=150.0, key=f"households_{i}")
+                median_income = st.number_input(f"Median Income {i+1}", value=3.0, key=f"income_{i}")
             
-            # Placeholder predykcji – średnia cena z datasetu lub stała wartość
-            placeholder_price = 200000.0
-            manual_data.append({
+            # Ocean proximity - wymagane przez model
+            ocean_proximity = st.selectbox(
+                f"Ocean Proximity {i+1}",
+                options=["NEAR BAY", "<1H OCEAN", "INLAND", "NEAR OCEAN", "ISLAND"],
+                index=2,  # domyślnie INLAND
+                key=f"ocean_{i}"
+            )
+            
+            # Predykcja ceny z użyciem modelu AutoGluon
+            prediction_data = {
                 "longitude": lon,
                 "latitude": lat,
                 "housing_median_age": housing_median_age,
@@ -164,30 +221,49 @@ with tab2:
                 "population": population,
                 "households": households,
                 "median_income": median_income,
-                "predicted_price": placeholder_price
-            })
+                "ocean_proximity": ocean_proximity
+            }
+            
+            if predictor is not None:
+                try:
+                    prediction_df = pd.DataFrame([prediction_data])
+                    predicted_price = predictor.predict(prediction_df).iloc[0]
+                except Exception as e:
+                    st.warning(f"Błąd predykcji: {e}. Używam wartości domyślnej.")
+                    predicted_price = 200000.0
+            else:
+                predicted_price = 200000.0  # fallback
+                st.warning("Model nie jest dostępny. Używam wartości domyślnej.")
+            
+            prediction_data["predicted_price"] = predicted_price
+            manual_data.append(prediction_data)
 
         df_map = pd.DataFrame(manual_data)
 
-        # Pokazanie przewidywanej ceny (placeholder)
-        st.success(f"Przewidywana cena domu (placeholder): **${placeholder_price:,.0f}**")
+        # Pokazanie przewidywanej ceny
+        st.divider()
+        st.subheader("📊 Predykcje modelu")
+        for i, row in df_map.iterrows():
+            if predictor is not None:
+                st.success(f"🏠 Punkt {i+1}: Przewidywana cena domu: **${row['predicted_price']:,.0f}**")
+            else:
+                st.info(f"🏠 Punkt {i+1}: Szacowana cena (placeholder): **${row['predicted_price']:,.0f}**")
 
-        # Wizualizacja punktu na mapie
+        # Wizualizacja punktów na mapie
         fig_pred = px.scatter_mapbox(
             df_map,
             lat="latitude",
             lon="longitude",
             color="predicted_price",
-            size_max=15,
             zoom=6,
             mapbox_style="open-street-map",
-            title="Predykcja ceny domu (placeholder)",
+            title="Predykcja cen domów" + (" (AutoGluon)" if predictor else " (placeholder)"),
             hover_data=df_map.columns
         )
         st.plotly_chart(fig_pred, use_container_width=True)
 
     # --- Jeśli dane pochodzą z pliku lub wbudowanego datasetu ---
-    if df_map is not None and not manual_input:
+    if df_map is not None and data_source != "manual":
         try:
             st.success(f"Successfully loaded dataset with {df_map.shape[0]} rows and {df_map.shape[1]} columns.")
             
@@ -345,7 +421,8 @@ with tab2:
             st.error(f"Error processing the data: {str(e)}")
             st.info("Please ensure the uploaded file is a valid CSV with numeric columns for longitude, latitude, and price.")
     else:
-        st.info("Please upload a CSV file or check 'Użyj wbudowanego datasetu' to begin exploring housing data.")
+        if data_source == "upload" and uploaded_file is None:
+            st.info("📤 Wgraj plik CSV, aby rozpocząć eksplorację danych.")
 
 # ============================================================================
 # TAB 3: STATYSTYKI (statistics.py)
